@@ -26,7 +26,6 @@ GameScene::GameScene(LPSTR lpCmdLine){
 
 	// コマンドライン引数チェック
 	if (*lpCmdLine == 0){
-		cmd_line = "C:\\Users\\h1dia.LB-S231X\\Documents\\_bms\\_spackage\\[est]angelic_snow\\as_air_extreme.bme";
 		boot();
 	}
 	else

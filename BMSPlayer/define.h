@@ -5,4 +5,4 @@
 #include <algorithm>
 #include <deque>
 
-const int THIS_VERSION = 20150201;
+const int THIS_VERSION = 1;
