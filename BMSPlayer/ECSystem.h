@@ -5,6 +5,7 @@ public:
 	ECSystem::ECSystem();
 	ECSystem::~ECSystem();
 
+	void ECSystem::drawsystembg();
 	void ECSystem::drawsystem();
 	void ECSystem::drawkey(int key, int y);
 	

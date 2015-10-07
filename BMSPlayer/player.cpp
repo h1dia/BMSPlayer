@@ -28,9 +28,6 @@ BmsPlayer::BmsPlayer(std::string bms_path){
 		visnote_size.at(i) = visible_notes(i).size();
 	}
 
-	setSoundToMem();
-	setGraphToMem();
-
 	ScreenFlip();
 	ClearDrawScreen();
 }
@@ -41,9 +38,36 @@ BmsPlayer::~BmsPlayer(){
 
 // getoptions
 
-void BmsPlayer::bmsPlay(){	
+void BmsPlayer::bmsPlay(){
+	ChronoTimer calcflame;
+
+	// メディアロード開始
+	SetUseASyncLoadFlag(TRUE);
+
+	setSoundToMem();
+	setGraphToMem();
+
+	SetUseASyncLoadFlag(FALSE);
+
+	
+	while (ProcessMessage() == 0 && GetASyncLoadNum() != 0){
+		if (calcflame.GetLapTime() >= (1.0 / GetRefreshRate()) * 100000){
+			system_graph.drawsystembg();
+			system_graph.drawsystem();
+			DrawFormatString(450, 60, GetColor(255, 255, 255), "GENRE : %s", parser->getHeader("GENRE").c_str());
+			DrawFormatString(450, 75, GetColor(255, 255, 255), "TITLE : %s", parser->getHeader("TITLE").c_str());
+			DrawFormatString(450, 90, GetColor(255, 255, 255), "ARTIST: %s", parser->getHeader("ARTIST").c_str());
+			DrawFormatString(450, 105, GetColor(255, 255, 255), "BPM   : %s", parser->getHeader("BPM").c_str());
+			DrawFormatString(450, 120, GetColor(255, 255, 255), "LOADING...");
+
+			ScreenFlip();
+			ClearDrawScreen();
+			calcflame.ResetTime();
+		}
+	}
+
 	// ゲーム用タイマー
-	ChronoTimer timer, calcflame;
+	ChronoTimer timer;
 	while (ProcessMessage() == 0)
 	{
 		// プレー処理
@@ -56,8 +80,12 @@ void BmsPlayer::bmsPlay(){
 		
 		// 描画ブロック
 		if (calcflame.GetLapTime() >= (1.0 / GetRefreshRate()) * 100000){
-			system_graph.drawsystem();
+			system_graph.drawsystembg();
 			drawInterface(timer.GetLapTime());
+			system_graph.drawsystem();
+
+			ScreenFlip();
+			ClearDrawScreen();
 			calcflame.ResetTime();
 		}
 	}
@@ -78,10 +106,10 @@ void BmsPlayer::drawInterface(unsigned long long time){
 		for (int note_num = visnote_begin.at(j); note_num < visnote_size.at(j); note_num++){
 			visible_area = ((double)visible_notes(j).at(note_num).second - time) / visible_time;
 			// 範囲外
-			if (visible_area > 1){
+			if (visible_area > 1.05){
 				break;
 			}
-			if (visible_area < 0)
+			if (visible_area < -0.1)
 				visnote_begin.at(j)++;
 			// 範囲内
 			else{
@@ -91,9 +119,6 @@ void BmsPlayer::drawInterface(unsigned long long time){
 			}
 		}
 	}
-
-	ScreenFlip();
-	ClearDrawScreen();
 }
 
 void BmsPlayer::bmsSoundTest(){

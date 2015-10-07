@@ -3,6 +3,7 @@
 #include "scene.h"
 #include "player.h"
 #include "define.h"
+#include <fstream>
 
 GameScene::GameScene(LPSTR lpCmdLine){
 	cmd_line = lpCmdLine;
@@ -23,13 +24,20 @@ GameScene::GameScene(LPSTR lpCmdLine){
 	
 	SetDrawScreen(DX_SCREEN_BACK);
 	SetFontThickness(1);
+	
+	std::ifstream ifs("bmspath.txt");
+	getline(ifs, cmd_line);
 
+	start_player();
 	// コマンドライン引数チェック
+	// なんかうまく動かないのでアウト
+	/*
 	if (*lpCmdLine == 0){
 		boot();
 	}
 	else
 		start_player();
+		*/
 }
 
 GameScene::~GameScene(){
@@ -52,7 +60,7 @@ int GameScene::boot(){
 
 	// BMS データベース更新部
 
-	printfDx("\nPRESS ANY KEY\n");
+	printfDx("\nコマンドライン引数にBMSが指定されていません。\nPRESS ANY KEY\n");
 	ScreenFlip();
 
 	WaitKey();

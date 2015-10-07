@@ -87,6 +87,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="bmsparser.cpp" />
+    <ClCompile Include="DXAnimation.cpp" />
     <ClCompile Include="DXGraphic.cpp" />
     <ClCompile Include="ECSystem.cpp" />
     <ClCompile Include="FpsTimer.cpp" />
@@ -99,6 +100,7 @@
   <ItemGroup>
     <ClInclude Include="bmsparser.h" />
     <ClInclude Include="define.h" />
+    <ClInclude Include="DXAnimation.h" />
     <ClInclude Include="DXGraphic.h" />
     <ClInclude Include="ECSystem.h" />
     <ClInclude Include="FpsTimer.h" />
@@ -106,6 +108,9 @@
     <ClInclude Include="player.h" />
     <ClInclude Include="scene.h" />
     <ClInclude Include="timer.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="ClassDiagram.cd" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
