@@ -15,7 +15,7 @@ GameScene::GameScene(LPSTR lpCmdLine){
 	SetGraphMode(1280, 720, 16);
 	SetWindowSizeChangeEnableFlag(false);
 	ChangeWindowMode(true);
-	SetMainWindowText("Ç¶Ç≠ÇÕÅ`Ç—Å`Ç∆ ÇπÇ©ÇÒÇ«Ç∑ÇΩÇ¢ÇÈÅI");
+	SetMainWindowText("Ç¶Ç≠ÇÕÅ`Ç—Å`Ç∆ ÇπÇ©ÇÒÇ«Ç∑ÇΩÇ¢ÇÈÅI (Alpha)");
 	SetWaitVSyncFlag(vsync_flag);
 	SetAlwaysRunFlag(true);
 
