@@ -1,10 +1,14 @@
 #pragma once
+#pragma comment( lib, "Shlwapi.lib" )
+#include "Shlwapi.h"
 #include "DxLib.h"
 #include "player.h"
 #include "bmsparser.h"
 #include "timer.h"
 #include "FpsTimer.h"
 #include "DXGraphic.h"
+#include "input.h"
+#include "Result.h"
 
 BmsPlayer::BmsPlayer(std::string bms_path){
 	sound_handle.resize(1296);
@@ -16,6 +20,9 @@ BmsPlayer::BmsPlayer(std::string bms_path){
 	data_out_range = std::make_pair(0, 0);
 	index_count.resize(1296);
 	visible_time = 500000;
+	
+	//debug
+	aaa = 0;
 
 	// parse
 	parser = new BmsParser(bms_path);
@@ -36,19 +43,15 @@ BmsPlayer::~BmsPlayer(){
 	delete parser;
 }
 
-// getoptions
-
 void BmsPlayer::bmsPlay(){
 	ChronoTimer calcflame;
 
 	// メディアロード開始
 	SetUseASyncLoadFlag(TRUE);
-
 	setSoundToMem();
 	setGraphToMem();
 
 	SetUseASyncLoadFlag(FALSE);
-
 	
 	while (ProcessMessage() == 0 && GetASyncLoadNum() != 0){
 		if (calcflame.GetLapTime() >= (1.0 / GetRefreshRate()) * 100000){
@@ -58,7 +61,7 @@ void BmsPlayer::bmsPlay(){
 			DrawFormatString(450, 75, GetColor(255, 255, 255), "TITLE : %s", parser->getHeader("TITLE").c_str());
 			DrawFormatString(450, 90, GetColor(255, 255, 255), "ARTIST: %s", parser->getHeader("ARTIST").c_str());
 			DrawFormatString(450, 105, GetColor(255, 255, 255), "BPM   : %s", parser->getHeader("BPM").c_str());
-			DrawFormatString(450, 120, GetColor(255, 255, 255), "LOADING...");
+			DrawFormatString(450, 120, GetColor(255, 255, 255), "Loading...");
 
 			ScreenFlip();
 			ClearDrawScreen();
@@ -68,6 +71,13 @@ void BmsPlayer::bmsPlay(){
 
 	// ゲーム用タイマー
 	ChronoTimer timer;
+
+	// 入力関係
+	DxInput input;
+	Result score;
+
+	int grph_i = 0;
+
 	while (ProcessMessage() == 0)
 	{
 		// プレー処理
@@ -75,14 +85,20 @@ void BmsPlayer::bmsPlay(){
 		for (int j = 11; j < 20; j++){
 			play_channel_sound(j, timer.GetLapTime());
 		}
-		
-		// 判定
-		
+
 		// 描画ブロック
 		if (calcflame.GetLapTime() >= (1.0 / GetRefreshRate()) * 100000){
 			system_graph.drawsystembg();
+
+			SetDrawMode(DX_DRAWMODE_BILINEAR);
+			grph_i += play_channel_graph(4, grph_i, timer.GetLapTime());
+
+			SetDrawMode(DX_DRAWMODE_NEAREST);
+
 			drawInterface(timer.GetLapTime());
 			system_graph.drawsystem();
+
+			DrawFormatString(150, 300, GetColor(255, 255, 255), "PERFECT %d", aaa);
 
 			ScreenFlip();
 			ClearDrawScreen();
@@ -106,18 +122,19 @@ void BmsPlayer::drawInterface(unsigned long long time){
 		for (int note_num = visnote_begin.at(j); note_num < visnote_size.at(j); note_num++){
 			visible_area = ((double)visible_notes(j).at(note_num).second - time) / visible_time;
 			// 範囲外
-			if (visible_area > 1.05){
+			if (visible_area > 1){
 				break;
 			}
-			if (visible_area < -0.1)
+			if (visible_area < 0)
 				visnote_begin.at(j)++;
 			// 範囲内
 			else{
 				// 描画
 				double y = ((double)visible_notes(j).at(note_num).second - time) / visible_time;
-				system_graph.drawkey(j, 480 - (y * 480));
+				system_graph.drawkey(j, 480 - (y * 480)); // y座標は LIFT - (y * SUD+), 0 <= x < 480 
 			}
 		}
+
 	}
 }
 
@@ -159,7 +176,7 @@ void BmsPlayer::bmsSoundTest(){
 void BmsPlayer::setSoundToMem(){
 	std::vector<std::string> load_path = parser->getHeaderDataPath("WAV");
 	for (unsigned int i = 0; i < load_path.size(); i++){
-		if (LoadSoundMem(load_path.at(i).c_str()) != -1)
+		if (PathFileExists(load_path.at(i).c_str()) == 1)
 			sound_handle.at(i) = LoadSoundMem(load_path.at(i).c_str());
 		else
 			sound_handle.at(i) = LoadSoundMem((load_path.at(i).substr(0, load_path.at(i).find_last_of(".")) + ".ogg").c_str());
@@ -180,15 +197,15 @@ void BmsPlayer::setGraphToMem(){
 }
 
 int BmsPlayer::casc_DrawGraph(int channel, int index){
-	try{
-		if (!(before_graph_index == index))
-			PlayMovieToGraph(graph_handle.at(channel_array.at(channel).at(index).first));
+	if (graph_handle.size() < channel_array.at(channel).at(index).first
+		&& 0 < channel_array.at(channel).at(index).first)
+		return 0;
 
-		DrawGraph(100, 150, graph_handle.at(channel_array.at(channel).at(index).first), FALSE);
-	}
-	catch (std::out_of_range&){
-		return -1;
-	}
+	if (!(before_graph_index == index))
+		PlayMovieToGraph(graph_handle.at(channel_array.at(channel).at(index).first));
+
+	DrawExtendGraph(560, 100, 1060, 600,graph_handle.at(channel_array.at(channel).at(index).first), FALSE);
+	
 	before_graph_index = index;
 	return 0;
 }
@@ -231,18 +248,21 @@ std::vector<std::pair<int, unsigned long long int>> BmsPlayer::visible_notes(int
 }
 
 int BmsPlayer::play_channel_graph(int channel, int index, unsigned long long time){
-	try{
-		if (channel_array.at(channel).at(index).second <= time){
-			casc_DrawGraph(channel, index);
-		}
-		else{
-			casc_DrawGraph(channel, index - 1);
-			return 0;
-		}
+
+	if (channel >= 1296)
+		return 0;
+
+	if (index < channel_array.at(channel).size() && channel_array.at(channel).at(index).second <= time){
+		casc_DrawGraph(channel, index);
 	}
-	catch (std::out_of_range&){
+	else{
+		if (index == 0)
+			return 0;
+
+		casc_DrawGraph(channel, index - 1);
 		return 0;
 	}
+	
 	return 1;
 }
 

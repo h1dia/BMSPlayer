@@ -30,8 +30,10 @@ private:
 	std::vector<int> visnote_begin;
 	std::vector<int> visnote_size;
 	std::vector<int> visnote_next;
-
+	
 	int before_graph_index;
+
+	int aaa;
 
 	int casc_PlaySoundMem(int, int);
 	int casc_DrawGraph(int, int);
