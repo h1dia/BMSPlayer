@@ -7,22 +7,23 @@
 #include "timer.h"
 #include "FpsTimer.h"
 #include "DXGraphic.h"
-#include "input.h"
 #include "Result.h"
 
 BmsPlayer::BmsPlayer(std::string bms_path){
 	sound_handle.resize(1296);
 	graph_handle.resize(1296);
-	visnote_begin.resize(8, 0);
-	visnote_next.resize(8, 0);
-	visnote_size.resize(8, 0);
+	visnote_begin.resize(8);
+	visnote_next.resize(8);
+	visnote_size.resize(8);
+	notes.resize(8);
+
 	before_graph_index = -1;
 	data_out_range = std::make_pair(0, 0);
 	index_count.resize(1296);
 	visible_time = 500000;
 	
 	//debug
-	aaa = 0;
+	combo_debug = 0;
 
 	// parse
 	parser = new BmsParser(bms_path);
@@ -70,10 +71,9 @@ void BmsPlayer::bmsPlay(){
 	}
 
 	// ゲーム用タイマー
-	ChronoTimer timer;
+	input.ResetTime();
 
 	// 入力関係
-	DxInput input;
 	Result score;
 
 	int grph_i = 0;
@@ -81,24 +81,27 @@ void BmsPlayer::bmsPlay(){
 	while (ProcessMessage() == 0)
 	{
 		// プレー処理
-		play_channel_sound(1, timer.GetLapTime());
+		play_channel_sound(1, input.GetLapTime());
 		for (int j = 11; j < 20; j++){
-			play_channel_sound(j, timer.GetLapTime());
+			play_channel_sound(j, input.GetLapTime());
 		}
+
+		input.inputUpdate();
+		checkJudge(input.GetLapTime());
 
 		// 描画ブロック
 		if (calcflame.GetLapTime() >= (1.0 / GetRefreshRate()) * 100000){
 			system_graph.drawsystembg();
 
 			SetDrawMode(DX_DRAWMODE_BILINEAR);
-			grph_i += play_channel_graph(4, grph_i, timer.GetLapTime());
+			grph_i += play_channel_graph(4, grph_i, input.GetLapTime());
 
 			SetDrawMode(DX_DRAWMODE_NEAREST);
 
-			drawInterface(timer.GetLapTime());
+			drawInterface(input.GetLapTime());
 			system_graph.drawsystem();
 
-			DrawFormatString(150, 300, GetColor(255, 255, 255), "PERFECT %d", aaa);
+			DrawFormatString(150, 300, GetColor(255, 255, 255), "PERFECT %d", combo_debug);
 
 			ScreenFlip();
 			ClearDrawScreen();
@@ -107,6 +110,9 @@ void BmsPlayer::bmsPlay(){
 	}
 
 	// リザルトクラス呼び出しとか
+
+
+
 	InitSoundMem();
 }
 
@@ -248,7 +254,6 @@ std::vector<std::pair<int, unsigned long long int>> BmsPlayer::visible_notes(int
 }
 
 int BmsPlayer::play_channel_graph(int channel, int index, unsigned long long time){
-
 	if (channel >= 1296)
 		return 0;
 
@@ -276,4 +281,31 @@ std::pair<int, unsigned long long int> BmsPlayer::ret_channel_array(int channel,
 	}
 
 	return channel_array.at(channel).at(index);
+}
+
+void BmsPlayer::checkJudge(unsigned long long time){
+	// 処理定義
+	const int perfect_range = 21000;
+	const int great_range = 60000;
+	const int good_range = 120000;
+	const int bad_range = 200000;
+
+	long long s = input.GetLapTime();
+	long long f = (long long)channel_array.at(11).at(notes.at(1)).second;
+	long long dif = abs(f - s);
+
+	clsDx();
+	printfDx("dif is %lld\n", f - input.GetLapTime());
+	printfDx("%d\n", notes.at(1));
+	if (input.isUpdateStatus(KEY_INPUT_Z)){
+		if (dif <= great_range){
+			combo_debug++;
+			notes.at(1)++;
+			printfDx("HIT %d\n", notes.at(1));
+		}
+	}
+	else if (s - f > bad_range){
+		combo_debug = 0;
+		notes.at(1)++;
+	}
 }
