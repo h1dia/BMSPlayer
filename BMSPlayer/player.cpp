@@ -290,22 +290,46 @@ void BmsPlayer::checkJudge(unsigned long long time){
 	const int good_range = 120000;
 	const int bad_range = 200000;
 
-	long long s = input.GetLapTime();
-	long long f = (long long)channel_array.at(11).at(notes.at(1)).second;
-	long long dif = abs(f - s);
+	for (int i = 0; i < 8; i++){
+		if (visible_notes(i).size() <= notes.at(i)){
+			continue;
+		}
 
-	clsDx();
-	printfDx("dif is %lld\n", f - input.GetLapTime());
-	printfDx("%d\n", notes.at(1));
-	if (input.isUpdateStatus(KEY_INPUT_Z)){
-		if (dif <= great_range){
-			combo_debug++;
-			notes.at(1)++;
-			printfDx("HIT %d\n", notes.at(1));
+		long long s = input.GetLapTime();
+		long long f = (long long)visible_notes(i).at(notes.at(i)).second;
+		long long dif = abs(f - s);
+
+		if (input.isUpdateStatus(keymap(i))){
+			if (dif <= good_range){
+				combo_debug++;
+				notes.at(i)++;
+				printfDx("HIT %d\n", notes.at(i));
+			}
+		}
+		else if (s - f > good_range){
+			combo_debug = 0;
+			notes.at(i)++;
 		}
 	}
-	else if (s - f > bad_range){
-		combo_debug = 0;
-		notes.at(1)++;
+}
+
+int BmsPlayer::keymap(int keyinfo){
+	switch (keyinfo){
+	case 0:
+		return KEY_INPUT_LSHIFT;
+	case 1:
+		return KEY_INPUT_Z;
+	case 2:
+		return KEY_INPUT_S;
+	case 3:
+		return KEY_INPUT_X;
+	case 4:
+		return KEY_INPUT_D;
+	case 5:
+		return KEY_INPUT_C;
+	case 6:
+		return KEY_INPUT_F;
+	case 7:
+		return KEY_INPUT_V;
 	}
 }

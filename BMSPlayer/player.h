@@ -52,5 +52,5 @@ private:
 	void drawInterface(unsigned long long time);
 	std::pair<int, unsigned long long int> ret_channel_array(int channel, int index);
 	std::vector<std::pair<int, unsigned long long int>> visible_notes(int channel);
-
+	int keymap(int);
 };
